@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from turtle import pd
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from .terrain import generate_reference_and_limits
