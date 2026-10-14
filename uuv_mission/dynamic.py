@@ -80,7 +80,11 @@ class Mission:
         reference = df['reference'].values
         cave_height = df['cave_height'].values
         cave_depth = df['cave_depth'].values
-        return cls(reference, cave_height, cave_depth)
+
+        if len(reference) == len(cave_height) == len(cave_depth):
+            return cls(reference, cave_height, cave_depth)
+        else:
+            raise ValueError("All mission arrays must have the same length")
 
 
 class ClosedLoop:
