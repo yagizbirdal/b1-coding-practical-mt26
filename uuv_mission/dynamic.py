@@ -77,14 +77,23 @@ class Mission:
     @classmethod
     def from_csv(cls, file_name: str):
         df = pd.read_csv(file_name)
+
+        # Check that the required columns exist
+        for col in ['reference', 'cave_height', 'cave_depth']:
+            if col not in df.columns:
+                raise ValueError(f"Missing column: {col}")
+
         reference = df['reference'].values
         cave_height = df['cave_height'].values
         cave_depth = df['cave_depth'].values
 
-        if len(reference) == len(cave_height) == len(cave_depth):
-            return cls(reference, cave_height, cave_depth)
-        else:
-            raise ValueError("All mission arrays must have the same length")
+        # Validate that the reference is always within cave boundaries
+        L = len(reference)
+        for i in range(L):
+            if not (cave_depth[i] <= reference[i] <= cave_height[i]):
+                raise ValueError(f"Reference at time step {i} is out of bounds")
+    
+        return cls(reference, cave_height, cave_depth)
 
 
 class ClosedLoop:
