@@ -8,4 +8,7 @@ class PDController:
         self.prev_error = 0.0
 
     def step(self, reference: float, measurement: float) -> float:
-        raise NotImplementedError
+        error = reference - measurement
+        action = self.kp * error + self.kd * (error - self.prev_error)
+        self.prev_error = error
+        return action
