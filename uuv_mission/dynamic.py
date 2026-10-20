@@ -1,10 +1,16 @@
+"""Submarine dynamics, mission data, and closed-loop simulation."""
+
 from __future__ import annotations
 from dataclasses import dataclass
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from .control import PDController
 from .terrain import generate_reference_and_limits
 
 class Submarine:
+    """Simple plant model with horizontal motion and controlled depth."""
+
     def __init__(self):
 
         self.mass = 1
@@ -20,6 +26,8 @@ class Submarine:
 
 
     def transition(self, action: float, disturbance: float):
+        """Update the submarine's state based on the control action and disturbance."""
+
         self.pos_x += self.vel_x * self.dt
         self.pos_y += self.vel_y * self.dt
 
@@ -40,6 +48,8 @@ class Submarine:
         self.vel_y = 0
     
 class Trajectory:
+    """Store the submarine's position over time."""
+
     def __init__(self, position: np.ndarray):
         self.position = position  
         
@@ -64,6 +74,8 @@ class Trajectory:
 
 @dataclass
 class Mission:
+    """Generate a mission with a reference path and cave boundaries from a CSV file or randomly."""
+
     reference: np.ndarray
     cave_height: np.ndarray
     cave_depth: np.ndarray
@@ -75,12 +87,32 @@ class Mission:
 
     @classmethod
     def from_csv(cls, file_name: str):
-        # You are required to implement this method
-        pass
+        """Load a mission from CSV file"""
+
+        mission_data = pd.read_csv(file_name)
+
+        # Check that the required columns exist to avoid missing data
+        for column in ['reference', 'cave_height', 'cave_depth']:
+            if column not in mission_data.columns:
+                raise ValueError(f"Missing column: {column}")
+
+        reference = mission_data['reference'].values
+        cave_height = mission_data['cave_height'].values
+        cave_depth = mission_data['cave_depth'].values
+
+        # Validate that the reference is always within cave boundaries to avoid impossible missions
+        num_steps = len(reference)
+        for time_step in range(num_steps):
+            if not (cave_depth[time_step] <= reference[time_step] <= cave_height[time_step]):
+                raise ValueError(f"Reference at time step {time_step} is out of bounds")
+    
+        return cls(reference, cave_height, cave_depth)
 
 
 class ClosedLoop:
-    def __init__(self, plant: Submarine, controller):
+    """Simulate the closed-loop system of submarine and controller."""
+
+    def __init__(self, plant: Submarine, controller: PDController):
         self.plant = plant
         self.controller = controller
 
@@ -93,11 +125,12 @@ class ClosedLoop:
         positions = np.zeros((T, 2))
         actions = np.zeros(T)
         self.plant.reset_state()
+        self.controller.reset()
 
         for t in range(T):
             positions[t] = self.plant.get_position()
             observation_t = self.plant.get_depth()
-            # Call your controller here
+            actions[t] = self.controller.step(mission.reference[t], observation_t)
             self.plant.transition(actions[t], disturbances[t])
 
         return Trajectory(positions)

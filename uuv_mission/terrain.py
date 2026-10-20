@@ -1,14 +1,24 @@
+"""Generate, plot, and save mission reference paths and cave boundaries."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
 def generate_random_multisine_timeseries(length=100):
+    """Generate a multisine series from fixed frequencies and random amplitudes.
+
+    Args:
+        length: Number of samples to generate.
+
+    Returns:
+        A tuple containing the time samples and multisine values.
+    """
 
     t = np.linspace(0, 2 * np.pi, length)
     
     frequncies = np.array([0.05,0.1,0.5,1])
 
-    # Generate a multisine time series by summing sine waves with random frequencies and amplitudes
+    # Sum sine waves with fixed frequencies and random amplitudes.
     multisine_series = np.zeros(length)
     for frequency in frequncies:
         amplitude = np.random.uniform(0.1, 1)  # Random amplitude between 0.1 and 1
@@ -40,6 +50,7 @@ def plot_reference_and_terrain(reference, upper, lower):
     plt.show()
 
 def write_mission_to_csv(mission, file_name):
+
     # Create a DataFrame from the Mission object's attributes
     data = {
         'reference': mission.reference,
